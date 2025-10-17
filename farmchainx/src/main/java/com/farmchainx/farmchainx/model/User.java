@@ -1,41 +1,41 @@
 package com.farmchainx.farmchainx.model;
 
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-
 @Entity
-@Table(name= "user")
+@Table(name = "`user`")
 public class User {
+	
 	@Id
-	@GeneratedValue(strategy= GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 	
-	@Column(nullable=false)
+	@Column(nullable = false)
 	private String name;
 	
-	@Column(unique=true,nullable=false)
+	@Column(unique = true, nullable = false)
 	private String email;
 	
-	@Column(unique=true,nullable=false)
+	@Column(nullable = false) 
 	private String password;
 	
-	@ManyToMany(fetch=FetchType.EAGER)
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(
-			name="user_roles",
-			joinColumns=@JoinColumn(name="user_id"),
-			inverseJoinColumns=@JoinColumn(name="role_id")
+			name ="user_roles",
+			joinColumns = @JoinColumn(name="user_id"),
+			inverseJoinColumns = @JoinColumn(name="role_id")
 			)
 	private Set<Role> roles;
+	
+	@OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
+	
+	private List<Product> products = new ArrayList<>();
+	
+	
 	
 
 	public long getId() {
@@ -77,7 +77,16 @@ public class User {
 	public void setRoles(Set<Role> roles) {
 		this.roles = roles;
 	}
-	
-	
 
+	public List<Product> getProducts() {
+		return products;
+	}
+
+	public void setProducts(List<Product> products) {
+		this.products = products;
+	}
+	
+	
+	
+	
 }
