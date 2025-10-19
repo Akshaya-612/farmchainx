@@ -11,13 +11,13 @@ import java.util.Date;
 public class JwtUtil {
 
     private final String SECRET_KEY = "farmchainx_secret_key_1234567890!!farm";
-    private final long EXPIRATION = 1000 * 60 * 60; // 1 hour
+    private final long EXPIRATION = 1000 * 60*60;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
-    // ✅ Generate token with email, role, and userId
+   
     public String generateToken(String email, String role, Long userId) {
         return Jwts.builder()
                 .setSubject(email)

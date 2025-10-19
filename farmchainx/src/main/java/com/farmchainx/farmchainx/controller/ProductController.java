@@ -14,8 +14,11 @@ import com.farmchainx.farmchainx.model.User;
 import com.farmchainx.farmchainx.repository.UserRepository;
 import com.farmchainx.farmchainx.service.ProductService;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/products")
+// Enable CORS for testing from Postman or other frontends
+
 public class ProductController {
 
     private final ProductService productService;
@@ -26,7 +29,6 @@ public class ProductController {
         this.userRepository = userRepository;
     }
 
-  
     @PostMapping("/upload")
     public Product uploadProduct(
             @RequestParam String cropName,
@@ -38,14 +40,13 @@ public class ProductController {
             @RequestParam("image") MultipartFile imageFile
     ) throws IOException {
 
-        System.out.println("🔥 [Controller] Entered /upload endpoint");
+    	System.out.println("Inside upload controller");
 
         if (imageFile.isEmpty()) {
             throw new RuntimeException("Image is required");
         }
 
         String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
-
         File folder = new File(uploadDir);
         if (!folder.exists()) folder.mkdirs();
 
@@ -72,12 +73,11 @@ public class ProductController {
         System.out.println("🔥 [Controller] Product saved with ID: " + saved.getId());
         return saved;
     }
- 
+
     @GetMapping("/farmer/{farmerId}")
     public List<Product> getProductsByFarmer(@PathVariable Long farmerId) {
         return productService.getProductsByFarmerId(farmerId);
     }
-
 
     @GetMapping("/{productId}")
     public Product getProductById(@PathVariable Long productId) {
