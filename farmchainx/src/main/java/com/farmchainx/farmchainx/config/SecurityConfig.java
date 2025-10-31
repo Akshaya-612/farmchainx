@@ -2,8 +2,10 @@ package com.farmchainx.farmchainx.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.farmchainx.farmchainx.jwt.JwtAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -34,21 +37,32 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        System.out.println("🔐 Security filter chain configured successfully!");
+
         http
-          
-            .csrf(csrf -> csrf.disable())
-
-           
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()          // allow register/login
-                .requestMatchers("/api/products/**").hasAuthority("ROLE_FARMER") // only farmers can access
-                .anyRequest().authenticated()                         // everything else requires JWT
-            )
-
-            // No sessions; JWT is stateless
+            .csrf(csrf -> csrf.disable()) // ✅ Disable CSRF (important for Postman)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                // ✅ Public routes (must be before role-based)
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/uploads/**",
+                    "/api/verify/**",
+                    "/api/products/*/qrcode/download"
+                ).permitAll()
 
-            // Add our JWT filter before Spring’s default login filter
+                // ✅ Explicitly allow POST for login & register
+                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+
+                // 🔐 Protected routes
+                .requestMatchers("/api/products/**").hasAnyRole("FARMER", "DISTRIBUTOR", "RETAILER", "ADMIN")
+                .requestMatchers("/api/track/**").hasAnyRole("DISTRIBUTOR", "RETAILER", "ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // Everything else
+                .anyRequest().authenticated()
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
