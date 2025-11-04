@@ -20,7 +20,7 @@ public class DataSeeder implements CommandLineRunner {
         String[] roles = {
             "ROLE_CONSUMER",
             "ROLE_FARMER",
-            "ROLE_DISTRIBUTER",
+            "ROLE_DISTRIBUTOR",
             "ROLE_RETAILER",
             "ROLE_ADMIN"
         };

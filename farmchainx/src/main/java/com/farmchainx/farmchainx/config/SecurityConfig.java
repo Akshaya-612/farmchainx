@@ -2,7 +2,6 @@ package com.farmchainx.farmchainx.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -37,32 +36,42 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("🔐 Security filter chain configured successfully!");
 
         http
-            .csrf(csrf -> csrf.disable()) // ✅ Disable CSRF (important for Postman)
+            // 🔒 Disable CSRF since we use JWT (stateless)
+            .csrf(csrf -> csrf.disable())
+
+            // 🔒 Stateless session (JWT-based)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // ⚙️ Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // ✅ Public routes (must be before role-based)
+
+                // 🌍 Public routes — open to everyone (no login required)
                 .requestMatchers(
-                    "/api/auth/**",
-                    "/uploads/**",
-                    "/api/verify/**",
-                    "/api/products/*/qrcode/download"
+                        "/api/auth/**",                   // login/register
+                        "/uploads/**",                     // images, static files
+                        "/api/verify/**",                  // QR scan verification (public + token-supported)
+                        "/api/products/*/qrcode/download"  // QR image download
                 ).permitAll()
 
-                // ✅ Explicitly allow POST for login & register
-                .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                // 👨‍🌾 Product endpoints — FARMER + supply chain roles
+                .requestMatchers("/api/products/**")
+                    .hasAnyRole("FARMER", "DISTRIBUTOR", "RETAILER", "ADMIN")
 
-                // 🔐 Protected routes
-                .requestMatchers("/api/products/**").hasAnyRole("FARMER", "DISTRIBUTOR", "RETAILER", "ADMIN")
-                .requestMatchers("/api/track/**").hasAnyRole("DISTRIBUTOR", "RETAILER", "ADMIN")
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // 🚚 Tracking endpoints — only DISTRIBUTER, RETAILER, ADMIN
+                .requestMatchers("/api/track/**")
+                    .hasAnyRole("DISTRIBUTOR", "RETAILER", "ADMIN")
 
-                // Everything else
+                // 🧑‍💼 Admin-only endpoints
+                .requestMatchers("/api/admin/**")
+                    .hasRole("ADMIN")
+
+                // 🔐 Everything else → must be authenticated
                 .anyRequest().authenticated()
             )
+
+            // 🧩 Add JWT filter before username-password auth filter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
